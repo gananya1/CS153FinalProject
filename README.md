@@ -21,16 +21,16 @@ For example, a student who says "I can't do fractions" could feel that way for a
 mathtutor/
 ├── server.py                  ← FastAPI backend (REST API)
 ├── frontend/                  ← React + D3 frontend/
-├── index.html
-├── package.json
-├── vite.config.js
-└── src/
-    ├── main.jsx
-    ├── App.jsx
-    ├── index.css
-    └── components/
-        ├── KnowledgeGraph.jsx
-        └── RightPanel.jsx
+    ├── index.html
+    ├── package.json
+    ├── vite.config.js
+    └── src/
+        ├── main.jsx
+        ├── App.jsx
+        ├── index.css
+        └── components/
+            ├── KnowledgeGraph.jsx
+            └── RightPanel.jsx
 ├── agents/
 │   ├── graph_update_agent.py  ← Conversation → structured graph mutations
 │   ├── tutoring_agent.py      ← Graph context → personalized response
