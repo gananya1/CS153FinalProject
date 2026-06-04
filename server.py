@@ -5,13 +5,12 @@ Exposes REST endpoints consumed by the React frontend.
 Start with:
     uvicorn server:app --reload --port 8000
 """
+from __future__ import annotations
 
 import logging
 import os
 from pathlib import Path
 from typing import Optional
-
-from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
