@@ -139,10 +139,6 @@ This project was evaluated through three methods:
 ```bash
 # Unit tests only (no API key needed)
 pytest tests/ -v -k "not live"
-
-# All tests including live API calls
-export ANTHROPIC_API_KEY=sk-ant-...
-pytest tests/ -v
 ```
 
 These validate: coherence map loading and edge structure, graph state mutations (mastered, partial, misconception, confusion links), attempt counting, JSON parsing of agent output (including malformed inputs), and the context assembly pipeline.
@@ -156,7 +152,7 @@ The system was evaluated by running sessions using three controlled student arch
 | "Prerequisite gap" | Attempts 5.NF.A.1 (unlike denominators) but lacks 4.NF.A.1 (equivalent fractions) | Tutor traces back to prerequisite gap and teaches equivalent fractions first |
 | "Partially correct" | Can identify unit fractions but not non-unit fractions | Graph tags 3.NF.A.1 as PARTIAL; tutor probes the specific gap |
 
-Observations: 
+Observations: The model does a good job surfacing misconceptions, and backtracking to prerequisite standards to be sure of a solid understanding, even when higher level standards happen to be given correct answers. It uses multiple questions per standard, and sensibly walks through adjacent standards to develop a solid understanding of student level. It does somewhat rely on clarity in student reasoning - but sometimes so do teachers! Coverage of noticed gaps is strategic and well-executed. Knowledge graphs also get understandably unruly as sessions continue extensively or student interactions span multiple sessions.
 
 **3. Live API integration tests** (requires `ANTHROPIC_API_KEY`)
 ```bash
