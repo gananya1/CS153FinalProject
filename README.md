@@ -116,7 +116,7 @@ uvicorn server:app --reload --port 8000
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run build
 # Open http://localhost:5173
 ```
 
