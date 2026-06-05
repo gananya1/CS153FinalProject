@@ -7,6 +7,9 @@ Start with:
 """
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
 import os
 from pathlib import Path
@@ -130,10 +133,11 @@ def get_graph(student_id: str, grade: int = 4):
     # Include all seen standards + their immediate neighbors for context
     expanded = set(seen_ids)
     for sid in seen_ids:
-        for neighbor in cg.neighbors(sid):
-            expanded.add(neighbor)
-        for pred in cg.predecessors(sid):
-            expanded.add(pred)
+        if sid in cg:
+            for neighbor in cg.neighbors(sid):
+                expanded.add(neighbor)
+            for pred in cg.predecessors(sid):
+                expanded.add(pred)
 
     for sid in expanded:
         node_data = cg.nodes.get(sid, {})
@@ -168,12 +172,13 @@ def get_graph(student_id: str, grade: int = 4):
             "description": row["description"],
         })
 
+    summary = sg.summary()
     sg.close()
     return GraphStateResponse(
         student_id=student_id,
         nodes=nodes,
         edges=edges,
-        summary=sg.summary() if hasattr(sg, '_conn') else {"student_id": student_id},
+        summary=summary,
     )
 
 

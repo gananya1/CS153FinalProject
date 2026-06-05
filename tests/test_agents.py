@@ -30,6 +30,9 @@ from agents.graph_update_agent import GraphUpdateAgent
 from agents.tutoring_agent import TutoringAgent, StandardIdentifier
 from api.session import TutoringSession
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # ---------------------------------------------------------------------------
 # Fixtures

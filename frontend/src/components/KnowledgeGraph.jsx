@@ -20,6 +20,7 @@ export default function KnowledgeGraph({ graphData, onNodeClick, selectedNode })
   const svgRef = useRef(null)
   const [tooltip, setTooltip] = useState(null)
 
+  // Main simulation effect — only reruns when node count changes
   useEffect(() => {
     if (!graphData || !graphData.nodes.length) return
     const svg = d3.select(svgRef.current)
@@ -40,7 +41,6 @@ export default function KnowledgeGraph({ graphData, onNodeClick, selectedNode })
     const seenIds = new Set(
       graphData.nodes.filter(n => n.status !== 'UNSEEN').map(n => n.id)
     )
-    // Include UNSEEN nodes that are connected to seen nodes
     const relevantIds = new Set(seenIds)
     graphData.edges.forEach(e => {
       if (seenIds.has(e.source) || seenIds.has(e.target)) {
@@ -58,7 +58,7 @@ export default function KnowledgeGraph({ graphData, onNodeClick, selectedNode })
       .filter(e => nodeIds.has(e.source) && nodeIds.has(e.target) && e.type === 'PREREQUISITE_OF')
       .map(e => ({ ...e }))
 
-    // Defs: arrowhead marker
+    // Arrowhead marker
     svg.append('defs').append('marker')
       .attr('id', 'arrow')
       .attr('viewBox', '0 -4 8 8')
@@ -71,19 +71,20 @@ export default function KnowledgeGraph({ graphData, onNodeClick, selectedNode })
       .attr('d', 'M0,-4L8,0L0,4')
       .attr('fill', '#3a4460')
 
-    // Grade-based y positioning hint
     const gradeOrder = { 'K': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, 'HS': 9 }
     const maxGrade = Math.max(...nodes.map(n => gradeOrder[n.grade] ?? 5))
 
-    // Force simulation
+    // Force simulation — tuned for stability
     const sim = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id(d => d.id).distance(90).strength(0.6))
-      .force('charge', d3.forceManyBody().strength(-280))
-      .force('center', d3.forceCenter(W / 2, H / 2))
+      .alphaDecay(0.05)
+      .velocityDecay(0.6)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(90).strength(0.8))
+      .force('charge', d3.forceManyBody().strength(-120))
+      .force('center', d3.forceCenter(W / 2, H / 2).strength(0.05))
       .force('y', d3.forceY(d => {
-        const g = gradeOrder[d.grade] ?? 5
-        return (g / (maxGrade || 1)) * H * 0.8 + H * 0.1
-      }).strength(0.3))
+        const gr = gradeOrder[d.grade] ?? 5
+        return (gr / (maxGrade || 1)) * H * 0.8 + H * 0.1
+      }).strength(0.4))
       .force('collision', d3.forceCollide(28))
 
     // Links
@@ -101,7 +102,7 @@ export default function KnowledgeGraph({ graphData, onNodeClick, selectedNode })
       .join('g')
       .attr('cursor', 'pointer')
       .call(d3.drag()
-        .on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y })
+        .on('start', (e, d) => { if (!e.active) sim.alphaTarget(0.1).restart(); d.fx = d.x; d.fy = d.y })
         .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y })
         .on('end', (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null })
       )
@@ -113,11 +114,8 @@ export default function KnowledgeGraph({ graphData, onNodeClick, selectedNode })
     node.append('circle')
       .attr('r', d => d.status !== 'UNSEEN' ? 14 : 10)
       .attr('fill', d => STATUS_COLOR[d.status] || STATUS_COLOR.UNSEEN)
-      .attr('stroke', d => {
-        if (selectedNode && selectedNode.id === d.id) return '#f59e0b'
-        return STATUS_STROKE[d.status] || STATUS_STROKE.UNSEEN
-      })
-      .attr('stroke-width', d => selectedNode && selectedNode.id === d.id ? 3 : 1.5)
+      .attr('stroke', d => STATUS_STROKE[d.status] || STATUS_STROKE.UNSEEN)
+      .attr('stroke-width', 1.5)
       .attr('opacity', d => d.status === 'UNSEEN' ? 0.4 : 1)
 
     // Misconception ring
@@ -161,7 +159,22 @@ export default function KnowledgeGraph({ graphData, onNodeClick, selectedNode })
     }, 800)
 
     return () => sim.stop()
-  }, [graphData, selectedNode])
+  }, [graphData?.nodes?.length])
+
+  // Lightweight selected node highlight — no simulation restart
+  useEffect(() => {
+    if (!svgRef.current) return
+    d3.select(svgRef.current).selectAll('circle')
+      .attr('stroke', function(d) {
+        if (!d) return null
+        if (selectedNode && d.id === selectedNode.id) return '#f59e0b'
+        return STATUS_STROKE[d.status] || STATUS_STROKE.UNSEEN
+      })
+      .attr('stroke-width', function(d) {
+        if (!d) return null
+        return selectedNode && d.id === selectedNode.id ? 3 : 1.5
+      })
+  }, [selectedNode])
 
   if (!graphData || !graphData.nodes.length) {
     return (

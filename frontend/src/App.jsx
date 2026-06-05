@@ -30,7 +30,7 @@ function SendIcon() {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('chat')    // 'chat' | 'graph'
+  const [activeTab, setActiveTab] = useState('chat')
   const [studentId, setStudentId] = useState('')
   const [studentName, setStudentName] = useState('')
   const [grade, setGrade] = useState('4')
@@ -47,9 +47,28 @@ export default function App() {
   const messagesEndRef = useRef(null)
   const textareaRef = useRef(null)
 
+  // 1. refreshGraph defined first with useCallback
+  const refreshGraph = useCallback(async () => {
+    if (!studentId) return
+    try {
+      const data = await apiGet(`/api/graph/${studentId}?grade=${parseInt(grade)}`)
+      setGraphData(data)
+      setGraphSummary(data.summary || {})
+    } catch (e) {
+      // Graph may not exist yet on first load — that's fine
+    }
+  }, [studentId, grade])
+
+  // 2. useEffects after refreshGraph is defined
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
+
+  useEffect(() => {
+    if (sessionActive && graphSummary?.total_standards_seen > 0) {
+      refreshGraph()
+    }
+  }, [graphSummary, refreshGraph])
 
   const startSession = async () => {
     if (!studentId.trim()) return
@@ -61,23 +80,11 @@ export default function App() {
       })
       setSessionActive(true)
       setMessages([])
-      // Load existing graph data if any
       await refreshGraph()
     } catch (e) {
       console.error(e)
     }
   }
-
-  const refreshGraph = useCallback(async () => {
-    if (!studentId) return
-    try {
-      const data = await apiGet(`/api/graph/${studentId}?grade=${grade}`)
-      setGraphData(data)
-      setGraphSummary(data.summary || {})
-    } catch (e) {
-      // Graph may not exist yet on first load — that's fine
-    }
-  }, [studentId, grade])
 
   const sendMessage = async () => {
     const text = input.trim()
@@ -100,7 +107,6 @@ export default function App() {
         standard: data.focus_standard,
       }])
       if (data.graph_summary) setGraphSummary(data.graph_summary)
-      // Refresh graph data after each exchange
       await refreshGraph()
     } catch (e) {
       setMessages(prev => [...prev, {
@@ -131,7 +137,7 @@ export default function App() {
           <button className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>
             Chat
           </button>
-          <button className={`tab-btn ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => { setActiveTab('graph'); refreshGraph() }}>
+          <button className={`tab-btn ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => { setActiveTab('graph'); setTimeout(() => refreshGraph(), 100) }}>
             Knowledge Graph
           </button>
         </div>
